@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { log } from "./log.js";
 import { STATE_DIR } from "./state.js";
@@ -54,5 +54,24 @@ export function writeLatestSuggestion(text: string, payload: unknown): void {
     );
   } catch (e) {
     log.warn(`寫入 latest-suggestion 失敗:${(e as Error).message}`);
+  }
+}
+
+/** Persist a failure note so a desktop user can see it even if the toast is missed. */
+export function writeLatestError(text: string): void {
+  try {
+    mkdirSync(STATE_DIR, { recursive: true });
+    writeFileSync(join(STATE_DIR, "latest-error.txt"), text, "utf8");
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Remove a stale failure note after a successful run. */
+export function clearLatestError(): void {
+  try {
+    rmSync(join(STATE_DIR, "latest-error.txt"), { force: true });
+  } catch {
+    /* ignore */
   }
 }

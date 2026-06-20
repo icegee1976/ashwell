@@ -20,7 +20,12 @@ import {
 } from "./decider.js";
 import { loadBacklog, pickTasks } from "./backlog.js";
 import { loadState, saveState } from "./state.js";
-import { windowsToast, writeLatestSuggestion } from "./notify.js";
+import {
+  clearLatestError,
+  windowsToast,
+  writeLatestError,
+  writeLatestSuggestion,
+} from "./notify.js";
 import { initLogger, log } from "./log.js";
 import type { State, Tier, UsageResponse } from "./types.js";
 
@@ -151,6 +156,20 @@ function notify(
   if (cfg.notify.toast && toast) windowsToast(title.slice(0, 120), body.slice(0, 300));
 }
 
+/** Surface a sensing/auth failure to a desktop user (toast + persistent note). */
+function notifyFailure(cfg: AshwellConfig, e: unknown): void {
+  let msg: string;
+  if (e instanceof RefreshFailedError)
+    msg = "續期失敗:請在終端機跑一次 `claude` 重新登入,Ashwell 才能繼續讀用量。";
+  else if (e instanceof RateLimitedError)
+    msg = "usage 端點限流(429);這次跳過,下次排程再試。";
+  else if (e instanceof TokenExpiredError)
+    msg = "access token 無效且自動續期未成功;請重新登入一次 `claude`。";
+  else msg = `感測失敗:${(e as Error).message}`;
+  writeLatestError(`[${new Date().toISOString()}] Ashwell 失敗\n${msg}\n`);
+  if (cfg.notify.toast) windowsToast("Ashwell:需要注意", msg.slice(0, 250));
+}
+
 // ── commands ────────────────────────────────────────────────────────────────
 
 async function cmdRun(flags: Flags): Promise<void> {
@@ -188,6 +207,7 @@ async function cmdRun(flags: Flags): Promise<void> {
     usage = await getUsage(cfg, state, flags, honorInterval);
   } catch (e) {
     handleSensorError(e);
+    notifyFailure(cfg, e);
     saveState(state);
     process.exitCode = 1;
     return;
@@ -196,6 +216,7 @@ async function cmdRun(flags: Flags): Promise<void> {
     saveState(state);
     return;
   }
+  clearLatestError(); // sensing succeeded — drop any stale failure note
 
   const { sd, remSd, ws, opus } = reportUsage(cfg, usage);
   if (sd?.resets_at) state.cachedResetsAt = sd.resets_at;
@@ -307,6 +328,15 @@ function cmdBacklog(flags: Flags): void {
   for (const t of tasks) {
     log.info(`  [${t.size.padEnd(6)}] ${t.id} — ${t.title}${t.done ? " (done)" : ""}`);
   }
+}
+
+function cmdTestNotify(flags: Flags): void {
+  const cfg = loadConfig({ configPath: flags.config });
+  initLogger({ logFile: null, quiet: flags.quiet });
+  log.info("送出測試 toast…");
+  windowsToast("Ashwell:測試通知", "看到這則就表示 toast 正常運作 ✅");
+  log.info("已送出。若沒看到:檢查系統「通知」是否開啟,或非 Windows 環境。");
+  void cfg;
 }
 
 /** Show the configured weekly trigger + next fire; with --reset <iso>, verify the math. */
@@ -433,6 +463,7 @@ ashwell — 排程觸發的 Claude 餘量收尾執行器 (v1: notify-only)
   ashwell when             顯示下次觸發時間;加 --reset <ISO> 可驗算
   ashwell backlog          列出 backlog 任務
   ashwell simulate [剩餘%]  離線試算決策,例:ashwell simulate 35 --opus 80
+  ashwell test-notify      送一則測試 toast,確認通知正常
   ashwell install          (Windows) 註冊每週排程工作(時間讀 config.wake)
   ashwell help
 
@@ -463,6 +494,9 @@ async function main(): Promise<void> {
     case "simulate":
     case "sim":
       cmdSimulate(flags, rest);
+      break;
+    case "test-notify":
+      cmdTestNotify(flags);
       break;
     case "install":
       await cmdInstall(flags);
