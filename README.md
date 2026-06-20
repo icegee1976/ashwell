@@ -121,19 +121,28 @@ tasks:
 ## 兩個關鍵雷(已內建對策)
 
 1. **429 限流極兇且無 `Retry-After`**,可連卡 30+ 分鐘 → Ashwell **絕不輪詢**:窗外不打、窗內最多每 `minCheckIntervalMinutes` 打一次,結果快取進 state。
-2. **Token 會過期**:Ashwell 讀到的 accessToken 可能已被 CC 續期掉而失效(401) → v1 記 log 後優雅退出,提示你「先跑一次任意 `claude` 指令續期」。v2 再做用 refreshToken 自行續期。
+2. **Token 會過期 → 已自動處理**:檔案裡的 accessToken 常已失效(尤其你只用桌面版時)。Ashwell 用 `refreshToken` **自助續期**(`api.anthropic.com/v1/oauth/token`,`console.*` 會被 Cloudflare 擋),新 token 存進自己的 `~/.ashwell/state.json`,**不回寫 `.credentials.json`**(避開已知的續期寫壞 bug, anthropics/claude-code#61912)。proactive(快取過期前)+ reactive(收到 401 重試一次)兩段式。唯一前提:CLI 曾登入過一次。
 
 ---
 
 ## 憑證與隱私
 
 - 憑證在 **runtime 由你本機讀取**:
-  - **Windows / Linux**:`~/.claude/.credentials.json`
+  - **Windows / Linux**:`~/.claude/.credentials.json`(只讀 `refreshToken`,**從不回寫**)
   - **macOS**:Keychain 項目 `"Claude Code-credentials"`(失敗則退回檔案)
-- accessToken **只**送往官方端點 `api.anthropic.com`,不外送任何第三方。
+- 自助續期得到的 access/refresh token **快取在 `~/.ashwell/state.json`**(明文,與 `.credentials.json` 同等敏感——當機密看待、勿提交版控;repo 的 .gitignore 已排除 `.ashwell/`)。
+- token **只**送往官方 `api.anthropic.com`,不外送任何第三方。
 - state / log / 建議都在本機 `~/.ashwell/`。
 
 ---
+
+## 桌面版使用者(自助續期 + 免終端機)
+
+你若**只用 Claude Code 桌面版、不用 CLI**:桌面版有自己的 token store(`%APPDATA%\Claude`),不會刷新 CLI 的 `.credentials.json`,那顆 token 會一直過期。對策就是上面的**自助續期**——只要 CLI **曾經登入過一次**(`.credentials.json` 裡有 refreshToken),Ashwell 之後就能自動續期,你完全不用碰終端機。
+
+免終端機操作:
+- 例行檢查由 Task Scheduler 每週三 08:00 自動跑,結果走 toast + `~/.ashwell/latest-suggestion.txt`。
+- 想手動看:雙擊 `scripts\Ashwell-Status.cmd`(查用量/建議)或 `scripts\Ashwell-When.cmd`(看下次觸發)。可右鍵「釘選到開始畫面/工作列」或建桌面捷徑。
 
 ## 其他平台排程
 

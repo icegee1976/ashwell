@@ -15,7 +15,9 @@ export interface UsageResponse {
   seven_day?: UsageWindow | null;
   seven_day_oauth_apps?: UsageWindow | null;
   seven_day_opus?: UsageWindow | null;
-  [key: string]: UsageWindow | null | undefined;
+  // The live endpoint also returns extra_usage / spend / limits[] / scoped
+  // windows etc. We only read the windows above, so allow anything else through.
+  [key: string]: unknown;
 }
 
 export type Tier = "large" | "medium" | "small" | "skip";
@@ -41,4 +43,6 @@ export interface State {
   lastSuggestion?: { taskId: string; at: string; tier: Tier } | null;
   /** Task ids already executed (reserved for v2 auto-exec). */
   executedTaskIds?: string[];
+  /** Ashwell's self-refreshed OAuth tokens — kept here, NOT in .credentials.json. */
+  auth?: { accessToken: string; refreshToken?: string; expiresAt?: number };
 }

@@ -1,5 +1,4 @@
 import { execFileSync } from "node:child_process";
-import type { OAuthCreds } from "./credentials.js";
 import type { UsageResponse } from "./types.js";
 
 const USAGE_URL = "https://api.anthropic.com/api/oauth/usage";
@@ -9,9 +8,7 @@ const BETA = "oauth-2025-04-20";
 export const DEFAULT_CC_VERSION = "2.1.91";
 
 export class TokenExpiredError extends Error {
-  constructor(
-    msg = "Access token 已過期或無效(401)。請在終端機跑一次任意 `claude` 指令讓它靜默續期,再重試。",
-  ) {
+  constructor(msg = "usage 端點回 401(access token 無效)。") {
     super(msg);
     this.name = "TokenExpiredError";
   }
@@ -24,12 +21,6 @@ export class RateLimitedError extends Error {
     super(msg);
     this.name = "RateLimitedError";
   }
-}
-
-/** Claude Code stores expiresAt in ms; tolerate a seconds value just in case. */
-function toMs(t?: number): number | undefined {
-  if (!t) return undefined;
-  return t < 1e12 ? t * 1000 : t;
 }
 
 /** Best-effort `claude --version` so the User-Agent matches a real client. */
@@ -58,20 +49,15 @@ export function getClaudeCodeVersion(): string | null {
 }
 
 export async function fetchUsage(
-  creds: OAuthCreds,
+  accessToken: string,
   ccVersion: string,
 ): Promise<UsageResponse> {
-  const expMs = toMs(creds.expiresAt);
-  if (expMs && Date.now() >= expMs - 60_000) {
-    throw new TokenExpiredError();
-  }
-
   let res: Awaited<ReturnType<typeof fetch>>;
   try {
     res = await fetch(USAGE_URL, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${creds.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         "anthropic-beta": BETA,
         "Content-Type": "application/json",
         "User-Agent": `claude-code/${ccVersion}`,

@@ -8,6 +8,7 @@ import {
   RateLimitedError,
   TokenExpiredError,
 } from "./sensor.js";
+import { ensureAccessToken, forceRefresh, RefreshFailedError } from "./auth.js";
 import {
   fullDayName,
   nextWeekly,
@@ -63,7 +64,12 @@ function fmtLocal(d: Date | null): string {
 }
 
 function handleSensorError(e: unknown): void {
-  if (e instanceof TokenExpiredError || e instanceof RateLimitedError) log.warn(e.message);
+  if (
+    e instanceof TokenExpiredError ||
+    e instanceof RateLimitedError ||
+    e instanceof RefreshFailedError
+  )
+    log.warn(e.message);
   else log.error(`感測失敗:${(e as Error).message}`);
 }
 
@@ -92,10 +98,21 @@ async function getUsage(
     `憑證來源:${creds.source}${creds.subscriptionType ? ` (plan: ${creds.subscriptionType})` : ""}`,
   );
   const version = cfg.userAgentVersion ?? getClaudeCodeVersion() ?? DEFAULT_CC_VERSION;
-  const usage = await fetchUsage(creds, version);
-  state.lastCheckedAt = new Date(now).toISOString();
-  state.lastUsage = usage;
-  return usage;
+  let token = await ensureAccessToken(creds, state, version);
+  try {
+    const usage = await fetchUsage(token, version);
+    state.lastCheckedAt = new Date(now).toISOString();
+    state.lastUsage = usage;
+    return usage;
+  } catch (e) {
+    if (!(e instanceof TokenExpiredError)) throw e;
+    log.info("收到 401,反應式續期後重試一次…");
+    token = await forceRefresh(creds, state, version);
+    const usage = await fetchUsage(token, version);
+    state.lastCheckedAt = new Date(now).toISOString();
+    state.lastUsage = usage;
+    return usage;
+  }
 }
 
 function reportUsage(cfg: AshwellConfig, usage: UsageResponse) {
