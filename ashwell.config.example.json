@@ -1,0 +1,10 @@
+{
+  "window": { "sevenDayHours": 24 },
+  "tiers": { "large": 40, "medium": 15, "small": 5 },
+  "minCheckIntervalMinutes": 30,
+  "backlogPath": "./ashwell.backlog.yaml",
+  "logFile": "~/.ashwell/ashwell.log",
+  "notify": { "toast": true },
+  "userAgentVersion": null,
+  "considerOpus": true
+}

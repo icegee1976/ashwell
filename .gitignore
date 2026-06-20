@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+*.tsbuildinfo
+
+# local runtime state (kept in ~/.ashwell, but ignore if anyone drops it here)
+.ashwell/
+
+# user's real config — keep only the example tracked
+ashwell.config.json
+
+# internal handoff / bootstrap notes — not for the public repo
+# (remove this line if you want to publish it)
+ashwell-handoff.md

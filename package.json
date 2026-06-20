@@ -1,0 +1,43 @@
+{
+  "name": "ashwell",
+  "version": "0.1.0",
+  "description": "Scheduled leftover-quota finisher for Claude Code weekly usage — wakes ~24h before weekly reset, reads remaining quota, suggests what to build with it.",
+  "type": "module",
+  "bin": {
+    "ashwell": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "scripts",
+    "ashwell.config.example.json",
+    "ashwell.backlog.yaml",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "status": "node dist/cli.js status",
+    "prepare": "tsc"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "usage",
+    "quota",
+    "scheduler",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

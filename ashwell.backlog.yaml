@@ -1,0 +1,32 @@
+# Ashwell backlog — 把平常想做的東西丟進來,標 size。
+#
+# size: small | medium | large
+#   對應「進入 weekly reset 前 24h 窗時的剩餘額度 tier」:
+#     remaining >= 40%  -> large
+#     15% - 40%         -> medium
+#     5%  - 15%         -> small
+#     < 5%              -> skip(不啟動,避免中途撞牆)
+#
+# Ashwell 會挑「塞得進當前 tier 的最大任務」(把快過期的額度燒成產出),
+# 同 tier 內依清單順序(FIFO)。v1 只建議+通知,不自動執行。
+
+tasks:
+  - id: vtlive-settings-schema
+    title: "VTLIVE 5 設定檔 schema 驗證"
+    size: small
+    prompt: "為 VTLIVE 5 的 settings.json 加上 schema 驗證與版本遷移;壞檔時給清楚的錯誤訊息與安全 fallback。"
+
+  - id: refactor-camverse-logs
+    title: "CamVerse 日誌模組重構"
+    size: medium
+    prompt: "重構 ./src/logging,拆出 structured logger(分級、JSON 輸出、檔案輪替),並補單元測試。"
+
+  - id: portfolio-site-audit
+    title: "作品集網站體檢"
+    size: medium
+    prompt: "對 @_PORTFOLIO 靜態站跑一次 a11y + SEO + 效能體檢,輸出 ranked 可改清單與修法。"
+
+  - id: gunpla-pricing-scraper
+    title: "Gunpla 二手定價爬蟲原型"
+    size: large
+    prompt: "做一個抓某拍賣站 Gunpla 二手成交價的爬蟲原型,輸出 CSV,含基本去重、節流與防呆。"
