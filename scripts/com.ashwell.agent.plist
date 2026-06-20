@@ -6,7 +6,8 @@
     launchctl load   ~/Library/LaunchAgents/com.ashwell.agent.plist
     launchctl unload ~/Library/LaunchAgents/com.ashwell.agent.plist   # to remove
 
-  Fires hourly; Ashwell exits immediately outside the T-24h window.
+  Fires weekly (Wednesday 08:00 local). Ashwell exits immediately outside the
+  wake window. Weekday: 0/7=Sun, 3=Wed.
 -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -19,10 +20,12 @@
     <string>/ABSOLUTE/PATH/TO/ashwell/dist/cli.js</string>
     <string>run</string>
   </array>
-  <key>StartInterval</key>
-  <integer>3600</integer>
-  <key>RunAtLoad</key>
-  <true/>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>3</integer>
+    <key>Hour</key><integer>8</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
   <key>StandardOutPath</key>
   <string>/tmp/ashwell.out.log</string>
   <key>StandardErrorPath</key>

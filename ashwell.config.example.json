@@ -1,5 +1,5 @@
 {
-  "window": { "sevenDayHours": 24 },
+  "wake": { "dayOfWeek": "Wednesday", "time": "08:00" },
   "tiers": { "large": 40, "medium": 15, "small": 5 },
   "minCheckIntervalMinutes": 30,
   "backlogPath": "./ashwell.backlog.yaml",

@@ -3,8 +3,9 @@ import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
 export interface AshwellConfig {
-  /** How many hours before resets_at the action window opens. */
-  window: { sevenDayHours: number };
+  /** Weekly wake anchor in the machine's LOCAL time (the Task Scheduler trigger).
+   *  Defaults to Wednesday 08:00 (≈10h before the observed Wed 17:59 reset). */
+  wake: { dayOfWeek: string; time: string };
   /** Remaining-% thresholds. >=large => large tier, etc. */
   tiers: { large: number; medium: number; small: number };
   /** Minimum minutes between live endpoint calls (429 protection). */
@@ -21,7 +22,7 @@ export interface AshwellConfig {
 }
 
 const DEFAULTS: AshwellConfig = {
-  window: { sevenDayHours: 24 },
+  wake: { dayOfWeek: "Wednesday", time: "08:00" },
   tiers: { large: 40, medium: 15, small: 5 },
   minCheckIntervalMinutes: 30,
   backlogPath: "./ashwell.backlog.yaml",
